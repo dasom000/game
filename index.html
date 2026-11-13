@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>집 가고 싶은 만큼 누르세요</title>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <h1>집 가고 싶은 만큼<br>누르세요!</h1><br>
+    <div class="sub">오늘도 수고한 당신을 위한, 귀여운 퇴근 버튼 💕</div>
+  </header>
+
+
+  <section class="card" id="card">
+    <div class="saves hide" id="saves"><button class="save" id="save">⤓ 사진</button><button class="save" id="saveGif">⤓ 움짤</button></div>
+    <div class="left">
+      <div class="rays"></div>
+      <div class="say" id="say">버튼을 꾹 눌러주세요!</div>
+      <div class="creature idle" id="cr"></div>
+    </div>
+    <div class="right">
+      <div class="rar" id="rar"></div>
+      <div class="cname" id="cname"></div>
+      <div class="label">오늘의 퇴근 욕구</div>
+      <div class="big"><span id="pct">--</span><small>%</small></div>
+      <div class="comment" id="comment">얼마나 집에 가고 싶은지 보여주세요</div>
+    </div>
+  </section>
+
+  <div class="btn-wrap">
+    <button class="hold" id="btn"><div class="bar" id="bar"></div><span id="btnTxt">꾹 누르고 있다가 떼세요</span></button>
+  </div>
+
+  <section class="dex" id="dex">
+    <button class="dex-tab" id="dexToggle" aria-expanded="true">지금까지 나온 귀여운 친구들! <span class="chev">▾</span><span class="dot" id="dexDot"></span></button>
+    <div class="dex-count" id="dexCount">0 / 0</div>
+    <div class="stamp">도감 완성!</div>
+    <div class="dex-body" id="dexBody"><div class="tiers" id="tiers"></div>
+    <div class="grid" id="grid"></div>
+    <button class="dex-save" id="saveDex">⤓ 도감 이미지 저장</button></div>
+  </section>
+</div>
+
+<div class="sheet" id="sheet"><div class="sheet-box">
+  <button class="sheet-x" id="sheetX" aria-label="닫기">✕</button>
+  <div class="rar" id="shRar"></div>
+  <div class="sheet-cr" id="shCr"></div>
+  <div class="sheet-name" id="shName"></div>
+  <div class="sheet-say" id="shSay"></div>
+  <div class="sheet-meta" id="shMeta"></div>
+  <div class="sheet-btns"><button class="sbtn" id="shPng">⤓ 사진 저장</button><button class="sbtn pri" id="shGif">⤓ 움짤 저장</button></div>
+</div></div>
+<div class="modal" id="modal"><div class="modal-box">
+  <img id="shot" alt="결과 이미지">
+  <p>이미지를 길게 누르거나(모바일)<br>우클릭해서(PC) 저장하세요</p>
+  <div class="modal-btns"><a class="dl" id="dl" download>다운로드</a><button id="close">닫기</button></div>
+</div></div>
+
+<script src="gifenc.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
