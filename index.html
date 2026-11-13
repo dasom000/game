@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>집 가고 싶은 만큼 누르세요</title>
+<link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Jua&display=swap" rel="stylesheet">
+<style>
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Jua',sans-serif;color:#4A2F27;min-height:100vh;
+    background:#FFF7F5;
+    -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;overflow-x:hidden;
+  }
+  .page{max-width:1080px;margin:0 auto;padding:36px 20px 40px;position:relative;z-index:2}
+
+  /* 장식 */
+  .deco{position:fixed;pointer-events:none;z-index:0}
+  .corner{position:absolute;z-index:1;pointer-events:none}
+  .corner.house{left:-10px;top:30px;width:200px}
+  .corner.sleep{right:-10px;top:20px;width:220px}
+  .bubble-s{position:absolute;background:#fff;border-radius:22px;padding:10px 16px;font-family:'Gaegu';font-weight:700;font-size:19px;line-height:1.25;box-shadow:0 4px 14px rgba(200,140,140,.15);white-space:nowrap}
+  .corner.house .bubble-s{left:150px;top:20px;transform:rotate(-6deg);background:#FFE8E8}
+  .corner.sleep .bubble-s{left:20px;top:0}
+
+  /* 헤더 */
+  header{text-align:center;margin-bottom:26px}
+  h1{font-size:clamp(34px,6vw,58px);line-height:1.15;color:#4A2018;letter-spacing:-1px;position:relative;display:inline-block;text-shadow:0 3px 0 #fff}
+  h1::before,h1::after{content:'';position:absolute;top:18px;width:30px;height:46px;
+    background:linear-gradient(#FFB938,#FFB938) 0 0/4px 20px no-repeat,linear-gradient(#FFB938,#FFB938) 14px 12px/4px 22px no-repeat}
+  h1::before{left:-50px;transform:rotate(-30deg)}
+  h1::after{right:-50px;transform:rotate(30deg) scaleX(-1)}
+  .sub{display:inline-block;margin-top:12px;background:#FFE4E8;border-radius:999px;padding:8px 22px;font-size:17px;color:#6B4038}
+
+  /* 버튼 */
+  .btn-wrap{text-align:center;margin:26px 0 30px}
+  .hold{
+    position:relative;overflow:hidden;font-family:'Jua';font-size:26px;color:#fff;
+    width:min(440px,100%);height:86px;border-radius:999px;border:3px solid #C94461;cursor:pointer;
+    background:#F57A93;box-shadow:0 7px 0 #C94461, inset 0 -6px 0 rgba(0,0,0,.06);
+    transition:transform .08s,box-shadow .08s;touch-action:none;
+  }
+  .hold::after{content:'';position:absolute;right:46px;top:12px;width:60px;height:14px;border-radius:10px;background:rgba(255,255,255,.45);transform:rotate(-8deg)}
+  .hold .bar{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#FF5F7E,#FF4569)}
+  .hold span{position:relative;z-index:1}
+  .hold.down{transform:translateY(6px);box-shadow:0 1px 0 #C94461}
+
+  /* 결과 카드 */
+  .card{
+    display:grid;grid-template-columns:1.35fr 1fr;align-items:center;gap:10px;
+    background:linear-gradient(135deg,#F7F2FF,#FFF7FB);border:4px solid #fff;border-radius:34px;
+    box-shadow:0 12px 40px rgba(190,140,170,.18);padding:26px 34px;max-width:900px;margin:0 auto 46px;position:relative;
+    transition:background .5s, box-shadow .5s;
+  }
+  .card.rare{background:linear-gradient(135deg,#E9F1FF,#F4ECFF);box-shadow:0 0 0 4px #B9CCFF,0 12px 50px rgba(110,140,255,.35)}
+  .card.legend{background:linear-gradient(135deg,#FFF8DC,#FFEFF6,#EAF7FF);box-shadow:0 0 0 4px #FFD84D,0 0 60px rgba(255,200,40,.55)}
+  .left{position:relative;height:330px;display:flex;align-items:flex-end;justify-content:center}
+  .rays{position:absolute;left:50%;top:55%;width:440px;height:440px;margin:-220px 0 0 -220px;opacity:0;pointer-events:none;
+    background:repeating-conic-gradient(rgba(255,216,77,.35) 0 10deg,transparent 10deg 20deg);border-radius:50%;
+    -webkit-mask:radial-gradient(circle,#000 30%,transparent 70%);mask:radial-gradient(circle,#000 30%,transparent 70%)}
+  .card.legend .rays{opacity:1;animation:spin 8s linear infinite}
+  .card.rare .rays{opacity:.6;background:repeating-conic-gradient(rgba(140,170,255,.3) 0 10deg,transparent 10deg 20deg);animation:spin 10s linear infinite}
+  .creature{width:300px;height:300px;position:relative}
+  .creature svg{width:100%;height:100%}
+  .creature.pop{animation:pop .6s cubic-bezier(.3,1.6,.5,1)}
+  .creature.idle svg{animation:wobble 2.6s ease-in-out infinite}
+  .creature.shake svg{animation:shake var(--sp,.3s) linear infinite}
+  .say{position:absolute;left:4px;top:6px;background:#fff;border:3px solid #4A2F27;border-radius:28px;padding:12px 22px;
+    font-family:'Gaegu';font-weight:700;font-size:24px;white-space:nowrap;z-index:2;transform:rotate(-4deg)}
+  .say::after{content:'';position:absolute;left:40px;bottom:-16px;border:9px solid transparent;border-top:14px solid #4A2F27}
+  .say::before{content:'';position:absolute;left:43px;bottom:-9px;border:6px solid transparent;border-top:10px solid #fff;z-index:1}
+
+  .right{text-align:center}
+  .rar{display:inline-block;font-size:14px;padding:4px 14px;border-radius:999px;color:#fff;margin-bottom:6px;visibility:hidden}
+  .rar.c{background:#8FC79A;visibility:visible}.rar.r{background:linear-gradient(90deg,#7F9CFF,#B28BFF);visibility:visible}
+  .rar.l{background:linear-gradient(90deg,#FFB938,#FF7FA8,#8C9CFF);visibility:visible;animation:glow 1.2s ease-in-out infinite}
+  .cname{font-size:26px;min-height:34px;margin-bottom:10px}
+  .label{display:inline-block;background:#FFE6C9;border-radius:999px;padding:8px 22px;font-size:20px}
+  .big{font-size:clamp(76px,11vw,110px);line-height:1;letter-spacing:-3px;margin:8px 0 2px;color:#4A2018;position:relative;display:inline-block}
+  .big small{font-size:.55em;letter-spacing:0}
+  .big::after{content:'';position:absolute;left:4%;right:4%;bottom:-6px;height:10px;border-radius:10px;background:#FF9FB2;opacity:.6;transform:rotate(-2deg)}
+  .comment{display:inline-block;margin-top:22px;background:#fff;border:3px solid #E3D8F5;border-radius:999px;padding:10px 22px;font-size:18px;min-height:48px;word-break:keep-all}
+  .save{position:absolute;right:14px;top:14px;z-index:3;font-family:'Jua';font-size:13px;color:#B79586;background:rgba(255,255,255,.7);border:1px solid #EADDD6;border-radius:999px;padding:5px 11px;cursor:pointer}
+  .save:disabled{display:none}
+
+  /* 도감 */
+  .dex{position:relative;background:#FFE9EF;border-radius:40px;padding:42px 26px 26px;max-width:1040px;margin:0 auto}
+  .dex.done{background:linear-gradient(135deg,#FFF3C4,#FFE4EE,#E5EEFF)}
+  .dex-tab{font-family:'Jua';color:#4A2F27;border:0;cursor:pointer;position:absolute;top:-20px;left:50%;transform:translateX(-50%);background:#fff;border-radius:999px;padding:10px 26px;font-size:20px;box-shadow:0 4px 12px rgba(200,140,140,.15);white-space:nowrap}
+.chev{display:inline-block;margin-left:6px;transition:transform .25s}
+  .dex.collapsed .chev{transform:rotate(-90deg)}
+  .dot{display:none;position:absolute;right:8px;top:6px;width:10px;height:10px;border-radius:50%;background:#FF5F7E}
+  .dex.collapsed .dot.on{display:block}
+  .dex-body{overflow:hidden;transition:max-height .35s ease}
+  .dex.collapsed{padding-bottom:22px}
+  .dex.collapsed .dex-body{max-height:0!important}
+  .dex.collapsed .stamp{display:none!important}
+  .dex-count{position:absolute;top:-16px;right:30px;background:#FFD3DE;border-radius:999px;padding:7px 18px;font-size:15px;transform:rotate(3deg)}
+  .tiers{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .tiers span{font-size:14px;background:#fff;border-radius:999px;padding:5px 14px}
+  .tiers span.ok{background:#4A2F27;color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px}
+  .slot{position:relative;aspect-ratio:1;background:#fff;border-radius:22px;border:3px solid #fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .slot svg{width:88%;height:88%}
+  .slot.locked svg{filter:brightness(0) opacity(.12)}
+  .slot.locked::after{content:'?';position:absolute;font-size:30px;color:#D9C2C8}
+  .slot.r{border-color:#C3D2FF}.slot.l{border-color:#FFD84D;background:#FFFBEA}
+  .slot .n{position:absolute;right:6px;bottom:4px;font-size:12px;color:#B79586}
+  .slot .new{position:absolute;left:6px;top:6px;font-size:11px;background:#FF5F7E;color:#fff;border-radius:6px;padding:1px 5px}
+  .slot .t{position:absolute;left:6px;bottom:4px;font-size:11px;color:#fff;border-radius:6px;padding:1px 5px}
+  .slot.r .t{background:#8C9CFF}.slot.l .t{background:#FFB938}
+  .slot.locked .t,.slot.locked .n{display:none}
+  .stamp{display:none;position:absolute;right:26px;top:24px;transform:rotate(-12deg);border:4px solid #FF5F7E;color:#FF5F7E;border-radius:14px;padding:6px 14px;font-size:22px;background:rgba(255,255,255,.8)}
+  .dex.done .stamp{display:block;animation:stamp .5s cubic-bezier(.3,1.6,.5,1)}
+
+  /* 연출 */
+  .bit{position:fixed;pointer-events:none;z-index:50;font-size:26px;animation:fall 1.7s ease-out forwards}
+  .flash{position:fixed;inset:0;background:#fff;z-index:60;pointer-events:none;animation:flash .9s ease-out forwards}
+  .toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:70;pointer-events:none;font-size:44px;color:#fff;
+    padding:14px 34px;border-radius:999px;animation:toast 1.6s ease-out forwards;white-space:nowrap}
+  .toast.r{background:linear-gradient(90deg,#7F9CFF,#B28BFF)}.toast.l{background:linear-gradient(90deg,#FFB938,#FF7FA8,#8C9CFF)}
+  .toast.d{background:#FF5F7E;font-size:34px}
+
+  /* 저장 모달 */
+  .modal{position:fixed;inset:0;background:rgba(60,30,30,.45);z-index:80;display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.on{display:flex}
+  .modal-box{background:#fff;border-radius:26px;padding:20px;max-width:380px;width:100%;text-align:center}
+  .modal-box img{width:100%;border-radius:16px;display:block;-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
+  .modal-box p{font-size:16px;margin:14px 0;color:#6B4038;line-height:1.4}
+  .modal-box button{font-family:'Jua';font-size:17px;border:0;background:#F1E4DC;border-radius:999px;padding:10px 30px;cursor:pointer}
+
+  @keyframes pop{0%{transform:scale(0) rotate(-20deg)}100%{transform:scale(1) rotate(0)}}
+  @keyframes wobble{0%,100%{transform:rotate(-2deg) translateY(0)}50%{transform:rotate(2deg) translateY(-6px)}}
+  @keyframes shake{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,1px) rotate(-2deg)}75%{transform:translate(3px,-1px) rotate(2deg)}}
+  @keyframes fall{0%{opacity:1;transform:translate(0,0) scale(.6)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.1) rotate(var(--r))}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes glow{50%{filter:brightness(1.2) drop-shadow(0 0 6px #FFD84D)}}
+  @keyframes flash{0%{opacity:.95}100%{opacity:0}}
+  @keyframes toast{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}70%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(1)}}
+  @keyframes stamp{0%{transform:rotate(-12deg) scale(3);opacity:0}100%{transform:rotate(-12deg) scale(1);opacity:1}}
+
+  /* 세로형 레이아웃 */
+  .page{max-width:460px;padding:28px 18px 40px}
+  h1{font-size:clamp(32px,9vw,42px)}
+  h1::before,h1::after{top:10px;transform-origin:center}
+  h1::before{left:-38px}h1::after{right:-38px}
+  .sub{font-size:14px;padding:7px 16px}
+  header{margin-bottom:18px}
+  .card{grid-template-columns:1fr;padding:22px 16px 26px;margin:0 auto;gap:4px;overflow:hidden}
+  .left{height:270px}.creature{width:240px;height:240px}
+  .say{font-size:20px;padding:9px 16px;left:0;top:0}
+  .big{font-size:84px}
+  .comment{margin-top:16px;font-size:16px;padding:8px 18px}
+  .btn-wrap{margin:22px 0 64px}
+  .right{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .right>*{margin-left:auto;margin-right:auto}
+  .comment{text-align:center;background:none;border:0;padding:0;min-height:0;margin-top:18px;font-size:17px;color:#8B6F64;font-family:'Jua'}
+  .big::after{left:0;right:0;transform:none}
+  .hold{height:78px;font-size:22px;width:100%}
+  .dex{padding:40px 14px 18px;border-radius:30px;text-align:center}
+  .dex-count{position:static;display:inline-block;transform:none;margin-bottom:10px}
+  .grid{grid-template-columns:repeat(4,1fr);gap:8px}
+  .slot{border-radius:16px}
+  .stamp{right:10px;top:10px;font-size:16px}
+  @media (max-width:720px){
+    .page{padding-top:28px}
+    h1::before,h1::after{display:none}
+    .card{grid-template-columns:1fr;padding:20px 16px}
+    .left{height:270px}.creature{width:240px;height:240px}
+    .say{font-size:20px;padding:9px 16px}
+    .hold{height:76px;font-size:22px}
+    .dex{padding:40px 14px 18px;border-radius:30px}
+    .grid{grid-template-columns:repeat(4,1fr);gap:8px}
+    .slot{border-radius:16px}
+    .stamp{right:10px;top:10px;font-size:16px}
+  .chev{display:inline-block;margin-left:6px;transition:transform .25s}
+  .dex.collapsed .chev{transform:rotate(-90deg)}
+  .dot{display:none;position:absolute;right:8px;top:6px;width:10px;height:10px;border-radius:50%;background:#FF5F7E}
+  .dex.collapsed .dot.on{display:block}
+  .dex-body{overflow:hidden;transition:max-height .35s ease}
+  .dex.collapsed{padding-bottom:22px}
+  .dex.collapsed .dex-body{max-height:0!important}
+  .dex.collapsed .stamp{display:none!important}
+  .dex-count{position:static;display:inline-block;transform:none;margin-bottom:10px}
+    .dex{text-align:center}
+    .sub{font-size:14px;padding:7px 16px}
+    .card{overflow:hidden}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <h1>집 가고 싶은 만큼<br>누르세요!</h1><br>
+    <div class="sub">오늘도 수고한 당신을 위한, 귀여운 퇴근 버튼 💕</div>
+  </header>
+
+
+  <section class="card" id="card">
+    <button class="save" id="save" disabled title="이미지 저장">⤓ 저장</button>
+    <div class="left">
+      <div class="rays"></div>
+      <div class="say" id="say">버튼을 꾹 눌러주세요!</div>
+      <div class="creature idle" id="cr"></div>
+    </div>
+    <div class="right">
+      <div class="rar" id="rar"></div>
+      <div class="cname" id="cname"></div>
+      <div class="label">오늘의 퇴근 욕구</div>
+      <div class="big"><span id="pct">--</span><small>%</small></div>
+      <div class="comment" id="comment">얼마나 집에 가고 싶은지 보여주세요</div>
+    </div>
+  </section>
+
+  <div class="btn-wrap">
+    <button class="hold" id="btn"><div class="bar" id="bar"></div><span id="btnTxt">꾹 누르고 있다가 떼세요</span></button>
+  </div>
+
+  <section class="dex" id="dex">
+    <button class="dex-tab" id="dexToggle" aria-expanded="true">지금까지 나온 귀여운 친구들! <span class="chev">▾</span><span class="dot" id="dexDot"></span></button>
+    <div class="dex-count" id="dexCount">0 / 0</div>
+    <div class="stamp">도감 완성!</div>
+    <div class="dex-body" id="dexBody"><div class="tiers" id="tiers"></div>
+    <div class="grid" id="grid"></div></div>
+  </section>
+</div>
+
+<div class="modal" id="modal"><div class="modal-box">
+  <img id="shot" alt="결과 이미지">
+  <p>이미지를 길게 누르거나(모바일)<br>우클릭해서(PC) 저장하세요</p>
+  <button id="close">닫기</button>
+</div></div>
+
+<script>
+const INK='#4A2F27', OUT='#7A5548';
+const S=(w=4)=>`stroke="${INK}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+
+/* ===== 부품 ===== */
+function body(shape,c){
+  const st=`fill="${c}" stroke="${OUT}" stroke-width="3.5"`;
+  if(shape==='square') return `<rect x="42" y="60" width="116" height="110" rx="30" ${st}/>`;
+  if(shape==='tall') return `<rect x="50" y="46" width="100" height="126" rx="50" ${st}/>`;
+  if(shape==='flat') return `<path d="M100 76 C160 76 178 112 174 140 C170 166 140 172 100 172 C60 172 30 166 26 140 C22 112 40 76 100 76Z" ${st}/>`;
+  if(shape==='melt') return `<path d="M100 58 C150 58 162 96 160 126 L160 150 Q152 176 140 160 Q132 182 118 164 Q104 186 92 164 Q78 182 66 162 Q52 178 40 152 L40 126 C38 96 50 58 100 58Z" ${st}/>`;
+  if(shape==='fluff') return `<path d="M100 54 q14 -8 24 4 q16 -4 22 12 q16 6 12 22 q12 12 2 26 q6 18 -10 26 q-4 18 -24 18 q-12 12 -26 6 q-14 6 -26 -6 q-20 0 -24 -18 q-16 -8 -10 -26 q-10 -14 2 -26 q-4 -16 12 -22 q6 -16 22 -12 q10 -12 24 -4Z" ${st}/>`;
+  return `<path d="M100 56 C150 56 166 98 162 130 C158 162 132 172 100 172 C68 172 42 162 38 130 C34 98 50 56 100 56Z" ${st}/>`;
+}
+function ears(t,c){
+  const st=`fill="${c}" stroke="${OUT}" stroke-width="3.5"`;
+  switch(t){
+    case 'cat': return `<path d="M54 80 L60 40 L86 64 Z" ${st} stroke-linejoin="round"/><path d="M146 80 L140 40 L114 64 Z" ${st} stroke-linejoin="round"/><path d="M62 70 L64 52 L76 63Z" fill="#FFB3C6" opacity=".7"/><path d="M138 70 L136 52 L124 63Z" fill="#FFB3C6" opacity=".7"/>`;
+    case 'bunny': return `<ellipse cx="78" cy="34" rx="12" ry="32" ${st}/><ellipse cx="122" cy="34" rx="12" ry="32" ${st}/><ellipse cx="78" cy="36" rx="5" ry="20" fill="#FFB3C6" opacity=".6"/><ellipse cx="122" cy="36" rx="5" ry="20" fill="#FFB3C6" opacity=".6"/>`;
+    case 'droop': return `<ellipse cx="60" cy="64" rx="11" ry="30" ${st} transform="rotate(-55 60 64)"/><ellipse cx="140" cy="64" rx="11" ry="30" ${st} transform="rotate(55 140 64)"/>`;
+    case 'bear': return `<circle cx="58" cy="64" r="17" ${st}/><circle cx="142" cy="64" r="17" ${st}/><circle cx="58" cy="64" r="8" fill="#000" opacity=".08"/><circle cx="142" cy="64" r="8" fill="#000" opacity=".08"/>`;
+    case 'dog': return `<path d="M58 66 Q28 70 32 118 Q50 114 62 92Z" fill="#C99A78" stroke="${OUT}" stroke-width="3.5"/><path d="M142 66 Q172 70 168 118 Q150 114 138 92Z" fill="#C99A78" stroke="${OUT}" stroke-width="3.5"/>`;
+    case 'hamster': return `<circle cx="64" cy="66" r="12" ${st}/><circle cx="136" cy="66" r="12" ${st}/><circle cx="64" cy="66" r="6" fill="#FFB3C6" opacity=".7"/><circle cx="136" cy="66" r="6" fill="#FFB3C6" opacity=".7"/>`;
+    case 'sprout': return `<path d="M100 56 Q100 36 100 30" stroke="#5DAE4B" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M100 36 Q84 22 76 34 Q88 44 100 36Z" fill="#9BD98A" stroke="${OUT}" stroke-width="2.5"/><path d="M100 34 Q116 18 126 30 Q112 42 100 34Z" fill="#9BD98A" stroke="${OUT}" stroke-width="2.5"/>`;
+    case 'tuft': return `<path d="M92 58 Q96 40 100 56 Q104 38 110 58" stroke="${OUT}" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    case 'frog': return `<circle cx="72" cy="66" r="20" ${st}/><circle cx="128" cy="66" r="20" ${st}/>`;
+    case 'owl': return `<path d="M50 74 L52 42 L76 62Z" ${st} stroke-linejoin="round"/><path d="M150 74 L148 42 L124 62Z" ${st} stroke-linejoin="round"/>`;
+  }
+  return '';
+}
+const L=82,R=118;
+function eyes(t,y=110){
+  switch(t){
+    case 'dot': return `<circle cx="${L}" cy="${y}" r="6" fill="${INK}"/><circle cx="${R}" cy="${y}" r="6" fill="${INK}"/><circle cx="${L+2}" cy="${y-2}" r="2" fill="#fff"/><circle cx="${R+2}" cy="${y-2}" r="2" fill="#fff"/>`;
+    case 'sparkle': return `<ellipse cx="${L}" cy="${y}" rx="8" ry="10" fill="${INK}"/><ellipse cx="${R}" cy="${y}" rx="8" ry="10" fill="${INK}"/><circle cx="${L+3}" cy="${y-4}" r="3.5" fill="#fff"/><circle cx="${R+3}" cy="${y-4}" r="3.5" fill="#fff"/><circle cx="${L-3}" cy="${y+4}" r="1.5" fill="#fff"/><circle cx="${R-3}" cy="${y+4}" r="1.5" fill="#fff"/>`;
+    case 'star': return `<path d="M${L} ${y-10} l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z" fill="#FFB938" stroke="${INK}" stroke-width="2"/><path d="M${R} ${y-10} l3 7 7 1 -5 5 1 7 -6 -3 -6 3 1 -7 -5 -5 7 -1z" fill="#FFB938" stroke="${INK}" stroke-width="2"/>`;
+    case 'happy': return `<path d="M${L-7} ${y+3} Q${L} ${y-7} ${L+7} ${y+3}" ${S()}/><path d="M${R-7} ${y+3} Q${R} ${y-7} ${R+7} ${y+3}" ${S()}/>`;
+    case 'sleepy': return `<path d="M${L-8} ${y} Q${L} ${y+6} ${L+8} ${y}" ${S()}/><path d="M${R-8} ${y} Q${R} ${y+6} ${R+8} ${y}" ${S()}/>`;
+    case 'flat': return `<path d="M${L-8} ${y} L${L+8} ${y}" ${S()}/><path d="M${R-8} ${y} L${R+8} ${y}" ${S()}/>`;
+    case 'blank': return `<circle cx="${L}" cy="${y}" r="9" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="${R}" cy="${y}" r="9" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="${L}" cy="${y}" r="2.5" fill="${INK}"/><circle cx="${R}" cy="${y}" r="2.5" fill="${INK}"/>`;
+    case 'tired': return `<path d="M${L-9} ${y} L${L+9} ${y}" ${S()}/><path d="M${R-9} ${y} L${R+9} ${y}" ${S()}/><path d="M${L-8} ${y-9} L${L+6} ${y-5}" ${S(3)}/><path d="M${R+8} ${y-9} L${R-6} ${y-5}" ${S(3)}/>`;
+    case 'teary': return `<ellipse cx="${L}" cy="${y}" rx="8" ry="10" fill="${INK}"/><ellipse cx="${R}" cy="${y}" rx="8" ry="10" fill="${INK}"/><circle cx="${L+3}" cy="${y-4}" r="3" fill="#fff"/><circle cx="${R+3}" cy="${y-4}" r="3" fill="#fff"/><path d="M${L-8} ${y+7} Q${L} ${y+13} ${L+8} ${y+7}" stroke="#8FCBF5" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M${R-8} ${y+7} Q${R} ${y+13} ${R+8} ${y+7}" stroke="#8FCBF5" stroke-width="4" fill="none" stroke-linecap="round"/>`;
+    case 'angry': return `<circle cx="${L}" cy="${y+2}" r="6" fill="${INK}"/><circle cx="${R}" cy="${y+2}" r="6" fill="${INK}"/><path d="M${L-10} ${y-12} L${L+8} ${y-6}" ${S()}/><path d="M${R+10} ${y-12} L${R-8} ${y-6}" ${S()}/>`;
+    case 'cry': return `<path d="M${L-8} ${y-6} L${L+6} ${y} L${L-8} ${y+6}" ${S()}/><path d="M${R+8} ${y-6} L${R-6} ${y} L${R+8} ${y+6}" ${S()}/>`;
+    case 'spiral': return `<path d="M${L} ${y} m-1 0 a2 2 0 1 1 3 0 a5 5 0 1 1 -8 0 a8 8 0 1 1 13 0" ${S(3)}/><path d="M${R} ${y} m-1 0 a2 2 0 1 1 3 0 a5 5 0 1 1 -8 0 a8 8 0 1 1 13 0" ${S(3)}/>`;
+    case 'wink': return `<ellipse cx="${L}" cy="${y}" rx="7" ry="9" fill="${INK}"/><circle cx="${L+2}" cy="${y-3}" r="3" fill="#fff"/><path d="M${R-8} ${y+2} Q${R} ${y-6} ${R+8} ${y+2}" ${S()}/>`;
+    case 'owl': return `<circle cx="${L}" cy="${y-2}" r="15" fill="#fff" stroke="${OUT}" stroke-width="3"/><circle cx="${R}" cy="${y-2}" r="15" fill="#fff" stroke="${OUT}" stroke-width="3"/><circle cx="${L+2}" cy="${y-2}" r="7" fill="${INK}"/><circle cx="${R-2}" cy="${y-2}" r="7" fill="${INK}"/><circle cx="${L+4}" cy="${y-5}" r="2.5" fill="#fff"/><circle cx="${R}" cy="${y-5}" r="2.5" fill="#fff"/>`;
+  }
+  return '';
+}
+function mouth(t,y=126){
+  switch(t){
+    case 'w': return `<path d="M93 ${y} Q96 ${y+5} 100 ${y} Q104 ${y+5} 107 ${y}" ${S(3)}/>`;
+    case 'smile': return `<path d="M94 ${y} Q100 ${y+7} 106 ${y}" ${S(3)}/>`;
+    case 'open': return `<path d="M91 ${y-2} Q100 ${y+12} 109 ${y-2} Z" fill="#E86A7E" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    case 'flat': return `<path d="M95 ${y+2} L105 ${y+2}" ${S(3)}/>`;
+    case 'sad': return `<path d="M92 ${y+4} Q100 ${y-4} 108 ${y+4}" ${S(3)}/>`;
+    case 'o': return `<ellipse cx="100" cy="${y+2}" rx="4" ry="5" fill="${INK}"/>`;
+    case 'yawn': return `<ellipse cx="100" cy="${y+4}" rx="9" ry="12" fill="#E86A7E" stroke="${INK}" stroke-width="2.5"/>`;
+    case 'wail': return `<path d="M88 ${y-2} Q100 ${y+18} 112 ${y-2} Z" fill="#E86A7E" stroke="${INK}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    case 'wavy': return `<path d="M90 ${y+2} q3 -4 6 0 t6 0 t6 0 t6 0" ${S(3)}/>`;
+    case 'beak': return `<path d="M92 ${y-4} L108 ${y-4} L100 ${y+6} Z" fill="#FFA94D" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    case 'grit': return `<rect x="90" y="${y-3}" width="20" height="9" rx="3" fill="#fff" stroke="${INK}" stroke-width="2.5"/><path d="M96 ${y-3} v9 M104 ${y-3} v9" stroke="${INK}" stroke-width="2"/>`;
+    case 'tongue': return `<path d="M93 ${y} Q100 ${y+6} 107 ${y}" ${S(3)}/><path d="M97 ${y+3} Q100 ${y+12} 103 ${y+3}" fill="#FF8FA3" stroke="${INK}" stroke-width="2"/>`;
+  }
+  return '';
+}
+const X={
+  sparkle:`<path d="M156 62 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill="#FFD84D" stroke="#E0A800" stroke-width="1.5"/>`,
+  sparkles:`<path d="M156 62 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill="#FFD84D"/><path d="M32 70 l3 -7 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3z" fill="#FFD84D"/><path d="M168 140 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2z" fill="#FFD84D"/>`,
+  heart:`<path d="M152 70 c-6 -8 6 -14 8 -6 c2 -8 14 -2 8 6 l-8 8z" fill="#FF8FA3"/>`,
+  note:`<text x="150" y="74" font-size="26" fill="#A88BF0">♪</text>`,
+  sweat:`<path d="M152 86 Q158 98 152 104 Q146 98 152 86Z" fill="#A9D8FA" stroke="#7FB8E0" stroke-width="1.5"/>`,
+  sweat2:`<path d="M152 86 Q158 98 152 104 Q146 98 152 86Z" fill="#A9D8FA"/><path d="M44 92 Q49 102 44 107 Q39 102 44 92Z" fill="#A9D8FA"/>`,
+  zzz:`<text x="146" y="70" font-size="20" font-family="sans-serif" font-weight="bold" fill="#A88BF0">z</text><text x="160" y="50" font-size="26" font-family="sans-serif" font-weight="bold" fill="#A88BF0">Z</text>`,
+  dots:`<circle cx="150" cy="62" r="3" fill="#C9A99B"/><circle cx="160" cy="62" r="3" fill="#C9A99B"/><circle cx="170" cy="62" r="3" fill="#C9A99B"/>`,
+  tears:`<path d="M78 120 Q74 136 78 148" stroke="#8FCBF5" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M122 120 Q126 136 122 148" stroke="#8FCBF5" stroke-width="5" fill="none" stroke-linecap="round"/>`,
+  steam:`<path d="M58 54 q-6 -8 0 -16 q6 -8 0 -16" stroke="#E0D0C8" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M142 54 q6 -8 0 -16 q-6 -8 0 -16" stroke="#E0D0C8" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+  anger:`<path d="M146 64 l8 0 m-4 -4 l0 8 M158 56 l6 6 m0 -6 l-6 6" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"/>`,
+  scribble:`<path d="M30 52 c10 -14 26 0 14 8 c-12 8 -20 -10 -6 -14 c14 -4 18 14 4 16 c-12 2 -10 -12 0 -10" stroke="${INK}" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
+  bag:`<path d="M150 102 L136 150" stroke="#E8A877" stroke-width="5" stroke-linecap="round"/><rect x="150" y="98" width="34" height="44" rx="10" fill="#FFC59A" stroke="${OUT}" stroke-width="3"/><path d="M158 98 Q167 86 176 98" stroke="${OUT}" stroke-width="3" fill="none"/>`,
+  house:`<g transform="translate(10 18)"><path d="M0 18 L18 4 L36 18 Z" fill="#FF8FA3" stroke="${OUT}" stroke-width="2"/><rect x="5" y="17" width="26" height="20" rx="2" fill="#FFF1B8" stroke="${OUT}" stroke-width="2"/><rect x="14" y="25" width="8" height="12" fill="#FFC59A"/></g>`,
+  speed:`<path d="M18 110 L4 110 M22 126 L2 126 M18 142 L6 142" stroke="#C9A99B" stroke-width="4" stroke-linecap="round"/>`,
+  belly:`<ellipse cx="100" cy="140" rx="36" ry="30" fill="#fff"/>`,
+  owlBelly:`<path d="M80 136 q5 5 10 0 q5 5 10 0 q5 5 10 0 q5 5 10 0 M86 150 q5 5 10 0 q5 5 10 0 q5 5 10 0" stroke="${OUT}" stroke-width="2" fill="none" opacity=".5"/>`,
+  cheeks:`<ellipse cx="60" cy="130" rx="16" ry="12" fill="#FFE0C7" stroke="${OUT}" stroke-width="2"/><ellipse cx="140" cy="130" rx="16" ry="12" fill="#FFE0C7" stroke="${OUT}" stroke-width="2"/>`,
+  ghost:`<g opacity=".85"><path d="M150 40 q0 -16 14 -16 q14 0 14 16 l0 18 l-5 -4 l-5 4 l-4 -4 l-5 4 l-4 -4 l-5 4z" fill="#fff" stroke="${OUT}" stroke-width="2"/><circle cx="160" cy="38" r="2" fill="${INK}"/><circle cx="168" cy="38" r="2" fill="${INK}"/></g>`,
+  blanket:`<path d="M24 148 Q100 124 176 148 L176 182 L24 182Z" fill="#CDEBFF" stroke="${OUT}" stroke-width="3"/><path d="M50 160 l10 0 M80 154 l10 0 M120 154 l10 0 M150 160 l10 0" stroke="#fff" stroke-width="4" stroke-linecap="round"/>`,
+  coffee:`<g transform="translate(148 132)"><path d="M8 -6 q-4 -6 0 -12 M16 -6 q-4 -6 0 -12" stroke="#D8C8C0" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M26 8 q10 0 10 8 t-10 8" stroke="${OUT}" stroke-width="3" fill="none"/><rect x="0" y="0" width="26" height="32" rx="5" fill="#fff" stroke="${OUT}" stroke-width="3"/><rect x="5" y="10" width="16" height="10" rx="3" fill="#FF8FA3"/></g>`,
+  coffee2:`<g transform="translate(14 132)"><rect x="0" y="0" width="26" height="32" rx="5" fill="#fff" stroke="${OUT}" stroke-width="3"/><rect x="5" y="10" width="16" height="10" rx="3" fill="#A9D8FA"/></g>`,
+  eyebags:`<path d="M74 122 Q82 127 90 122" stroke="#B9A3E0" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M110 122 Q118 127 126 122" stroke="#B9A3E0" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+  glasses:`<circle cx="82" cy="110" r="14" fill="rgba(255,255,255,.35)" stroke="${INK}" stroke-width="3"/><circle cx="118" cy="110" r="14" fill="rgba(255,255,255,.35)" stroke="${INK}" stroke-width="3"/><path d="M96 108 Q100 104 104 108" stroke="${INK}" stroke-width="3" fill="none"/>`,
+  nightcap:`<path d="M92 64 Q110 18 166 34 Q150 48 152 74 Q124 58 92 64Z" fill="#A9C2EE" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/><path d="M94 62 Q124 54 154 72" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="168" cy="34" r="10" fill="#fff" stroke="${OUT}" stroke-width="3"/>`,
+  cushion:`<ellipse cx="100" cy="174" rx="84" ry="20" fill="#FFB3C6" stroke="${OUT}" stroke-width="3"/>`,
+  box:`<path d="M30 132 L10 112 L58 112 L72 132Z" fill="#E8BD8E" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/><path d="M170 132 L190 112 L142 112 L128 132Z" fill="#E8BD8E" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/><path d="M30 132 L170 132 L164 186 L36 186Z" fill="#D9A877" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/><path d="M84 150 h32" stroke="#B8875A" stroke-width="4" stroke-linecap="round"/>`,
+  carrot:`<g transform="translate(100 156) rotate(-25)"><path d="M-9 -12 L9 -12 L0 22Z" fill="#FFA94D" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/><path d="M-4 -12 Q-12 -26 -2 -24 Q0 -32 4 -22 Q14 -26 6 -12" fill="#7CC46A" stroke="${OUT}" stroke-width="2"/></g>`,
+  spikes:`<path d="M60 70 L68 44 L82 60 L92 34 L106 56 L118 36 L128 60 L142 46 L142 76 L60 76Z" fill="#7CC46A" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/><path d="M150 152 Q190 150 186 116 Q176 138 154 134Z" fill="#B5E6A5" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>`,
+  crown:`<path d="M72 60 L78 28 L92 46 L100 20 L108 46 L122 28 L128 60 Z" fill="#FFD84D" stroke="#C99A00" stroke-width="3" stroke-linejoin="round"/><circle cx="100" cy="46" r="5" fill="#FF6B81"/><circle cx="84" cy="52" r="3.5" fill="#7FB8FF"/><circle cx="116" cy="52" r="3.5" fill="#7FB8FF"/>`,
+  cape:`<path d="M58 92 Q16 150 28 182 L172 182 Q184 150 142 92Z" fill="#FF6B81" stroke="#C94461" stroke-width="3" stroke-linejoin="round"/>`,
+  halo:`<ellipse cx="100" cy="30" rx="30" ry="8" fill="none" stroke="#FFD84D" stroke-width="6"/><ellipse cx="100" cy="30" rx="30" ry="8" fill="none" stroke="#FFF6C2" stroke-width="2"/>`,
+  wings:`<path d="M46 112 Q4 76 12 118 Q0 140 28 140 Q22 160 50 148Z" fill="#fff" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/><path d="M154 112 Q196 76 188 118 Q200 140 172 140 Q178 160 150 148Z" fill="#fff" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>`,
+  wand:`<path d="M150 150 L176 112" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/><path d="M178 98 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1z" fill="#FFD84D" stroke="#C99A00" stroke-width="2"/>`,
+  rbdef:`<defs><linearGradient id="rb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFC1D6"/><stop offset=".35" stop-color="#FFF1B8"/><stop offset=".65" stop-color="#C9F0E1"/><stop offset="1" stop-color="#D6CCFF"/></linearGradient></defs>`,
+  tie:`<path d="M60 70 Q100 52 140 70" stroke="#FF6B81" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M140 70 l14 -10 l-2 14z" fill="#FF6B81"/>`,
+  mic:`<g transform="translate(150 118) rotate(20)"><rect x="-4" y="0" width="8" height="34" rx="3" fill="#7A7A8C"/><circle cx="0" cy="-4" r="10" fill="#C7C0D2" stroke="${OUT}" stroke-width="2.5"/></g>`
+};
+const blush=`<ellipse cx="64" cy="128" rx="10" ry="6" fill="#FF9AAE" opacity=".55"/><ellipse cx="136" cy="128" rx="10" ry="6" fill="#FF9AAE" opacity=".55"/>`;
+function build(o){
+  const [c,,hi]=o.col;
+  const j=k=>(k||[]).map(x=>X[x]).join('');
+  const feet=(o.shape==='melt'||o.noFeet)?'':`<ellipse cx="64" cy="172" rx="12" ry="6" fill="${c}" stroke="${OUT}" stroke-width="3"/><ellipse cx="136" cy="172" rx="12" ry="6" fill="${c}" stroke="${OUT}" stroke-width="3"/>`;
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">${o.noShadow?'':'<ellipse cx="100" cy="186" rx="54" ry="7" fill="#000" opacity=".06"/>'}
+    ${j(o.pre)}${ears(o.ears,c)}${body(o.shape||'blob',c)}
+    <ellipse cx="78" cy="80" rx="14" ry="7" fill="${hi}" opacity=".9" transform="rotate(-20 78 80)"/>
+    ${j(o.mid)}${o.noBlush?'':blush}${eyes(o.eyes)}${mouth(o.mouth)}${feet}${j(o.post)}</svg>`;
+}
+
+/* ===== 팔레트 ===== */
+const P={
+  yellow:['#FFF1B8',0,'#FFFCEB'], green:['#D9F5D0',0,'#F4FFF0'], brown:['#F3D9C4',0,'#FFF3EA'], cream:['#FFF0DE',0,'#FFFAF3'],
+  orange:['#FFE0C7',0,'#FFF7F0'], white:['#FFFFFF',0,'#FFFFFF'], purple:['#E6DBFF',0,'#F8F4FF'], dino:['#B5E6A5',0,'#E8FBE0'],
+  blue:['#CDEBFF',0,'#F2FAFF'], pink:['#FFD1DC',0,'#FFF6F8'], gray:['#E4E0EA',0,'#F6F4F9'], owl:['#D9C2A8',0,'#F2E6D8'],
+  mint:['#CFF3EA',0,'#F0FFFB'], navy:['#4A5578',0,'#6B789E'], peach:['#FFD6CC',0,'#FFF2EE'], lilac:['#F1D9F7',0,'#FCF5FE'],
+  gold:['#FFE9A8',0,'#FFF8DC'], rainbow:['url(#rb)',0,'#ffffff']
+};
+
+/* ===== 캐릭터 도감 =====  c: 흔함 70% / r: 희귀 25% / l: 전설 5% */
+const chars=[
+  {id:'chick',  r:'c', name:'삐약이',    col:P.yellow, ears:'tuft',   eyes:'sparkle', mouth:'beak', post:['sparkle'], say:'출근 완료! 삐약!'},
+  {id:'sprout', r:'c', name:'새싹이',    col:P.green,  ears:'sprout', eyes:'happy',   mouth:'w',    post:['heart'],   say:'오늘도 파릇파릇~'},
+  {id:'tofu',   r:'c', name:'두부',      col:P.white,  eyes:'dot', mouth:'o', shape:'square', say:'아직 말랑해요'},
+  {id:'frog',   r:'c', name:'개굴이',    col:P.mint,   ears:'frog',   eyes:'dot',     mouth:'tongue', say:'개굴… 괜찮아요'},
+  {id:'hams',   r:'c', name:'볼빵빵',    col:P.peach,  ears:'hamster',eyes:'dot',     mouth:'w', mid:['cheeks'], say:'간식… 있어요?'},
+  {id:'yawn',   r:'c', name:'하품이',    col:P.cream,  ears:'hamster',eyes:'sleepy',  mouth:'yawn', post:['zzz'], say:'하아암…'},
+  {id:'dog',    r:'c', name:'멍뭉이',    col:P.cream,  ears:'dog',    eyes:'blank',   mouth:'flat', post:['dots'], say:'멍…'},
+  {id:'bear',   r:'c', name:'커피곰',    col:P.brown,  ears:'bear',   eyes:'tired',   mouth:'smile', post:['coffee'], say:'커피 수혈 중'},
+  {id:'melt',   r:'c', name:'녹는이',    col:P.pink,   eyes:'flat', mouth:'wavy', shape:'melt', post:['sweat2'], say:'녹는 중…'},
+  {id:'cloud',  r:'c', name:'구름이',    col:P.gray,   eyes:'sleepy', mouth:'wavy', shape:'fluff', post:['scribble'], say:'머리가 뿌얘요'},
+  {id:'boxcat', r:'c', name:'상자냥',    col:P.white,  ears:'cat',    eyes:'blank',   mouth:'w', post:['box'], noFeet:true, say:'여기 숨어 있을래'},
+  {id:'carrot', r:'c', name:'당근토끼',  col:P.white,  ears:'bunny',  eyes:'dot',     mouth:'w', post:['carrot'], say:'당근 먹고 힘낼게'},
+  {id:'sigh',   r:'c', name:'축처진귀',  col:P.blue,   ears:'droop',  eyes:'teary',   mouth:'sad', post:['sweat'], say:'집…가고…싶어…'},
+
+  {id:'sleepy', r:'r', name:'꿀잠냥',    col:P.cream,  ears:'cat',    eyes:'sleepy',  mouth:'w', shape:'flat', pre:['cushion'], post:['nightcap','zzz'], noFeet:true, noShadow:true, say:'집에 갈래요…'},
+  {id:'dino',   r:'r', name:'공룡콩',    col:P.dino,   eyes:'sparkle', mouth:'open', pre:['spikes'], say:'크앙! 퇴근!'},
+  {id:'peng',   r:'r', name:'멍펭이',    col:P.navy,   eyes:'blank',   mouth:'beak', mid:['belly'], noBlush:true, post:['ghost'], say:'영혼 가출…'},
+  {id:'angry',  r:'r', name:'부글이',    col:P.pink,   ears:'bear',   eyes:'angry',   mouth:'grit', post:['anger','steam'], say:'퇴근 언제야!!'},
+  {id:'owl',    r:'r', name:'야근부엉',  col:P.owl,    ears:'owl',    eyes:'owl',     mouth:'beak', mid:['owlBelly'], post:['coffee'], noBlush:true, say:'오늘도 야근…?'},
+  {id:'zombie', r:'r', name:'좀비곰',    col:P.purple, ears:'bear',   eyes:'spiral',  mouth:'wavy', mid:['eyebags'], post:['coffee','coffee2'], say:'커피… 더…'},
+  {id:'party',  r:'r', name:'회식토끼',  col:P.lilac,  ears:'bunny',  eyes:'wink',    mouth:'open', pre:['tie'], post:['mic','note'], say:'한 곡 뽑겠습니다~'},
+  {id:'burrito',r:'r', name:'이불러버',  col:P.blue,   ears:'cat',    eyes:'sleepy',  mouth:'smile', post:['blanket'], noFeet:true, say:'이불 밖은 위험해'},
+
+  {id:'king',   r:'l', name:'칼퇴대왕',  col:P.gold,   ears:'cat',    eyes:'star',    mouth:'open', pre:['cape'], post:['crown','sparkles'], say:'6시 정각! 칼퇴다!'},
+  {id:'angel',  r:'l', name:'퇴근천사',  col:P.white,  ears:'bunny',  eyes:'happy',   mouth:'smile', pre:['wings','halo'], post:['sparkles'], say:'집으로 인도할게요'},
+  {id:'rainbow',r:'l', name:'무지개말랑',col:P.rainbow,eyes:'sparkle', mouth:'w', shape:'fluff', pre:['rbdef'], post:['wand','sparkles','house'], say:'소원 = 퇴근, 접수 완료!'}
+];
+chars.forEach(c=>c.svg=build(c));
+const R_INFO={c:{label:'흔함',cls:'c'},r:{label:'희귀',cls:'r'},l:{label:'전설',cls:'l'}};
+const pool={c:chars.filter(x=>x.r==='c'),r:chars.filter(x=>x.r==='r'),l:chars.filter(x=>x.r==='l')};
+
+const comments=[
+  [10,'아직 출근 모드! 쌩쌩하네요'],[20,'이 정도면 오늘 컨디션 최고'],[30,'커피 한 잔이면 버틸 수 있어요'],
+  [40,'간식 타임이 필요해 보여요'],[50,'절반 왔어요, 조금만 더!'],[60,'슬슬 영혼이 빠져나가는 중'],
+  [70,'시계를 자꾸 보게 되죠?'],[80,'머릿속엔 퇴근 생각뿐'],[90,'이 정도면 집 가도 되겠지…?'],
+  [99,'가방 이미 쌌잖아요'],[100,'당장 퇴근하세요!!! 집이 부릅니다']
+];
+
+/* ===== 장식 ===== */
+const waiting=build({col:P.yellow,eyes:'dot',mouth:'smile'}).replace('</svg>','<text x="148" y="72" font-size="30" font-family="sans-serif" font-weight="bold" fill="#C9A99B">?</text></svg>');
+
+
+
+/* ===== 도감 저장 ===== */
+let dex={};
+try{dex=JSON.parse(localStorage.getItem('gohome-dex')||'{}')}catch(e){}
+const saveDex=()=>{try{localStorage.setItem('gohome-dex',JSON.stringify(dex))}catch(e){}};
+let justNew=null;
+function renderDex(){
+  const grid=document.getElementById('grid');
+  grid.innerHTML=chars.map(c=>{
+    const n=dex[c.id]||0;
+    return `<div class="slot ${c.r} ${n?'':'locked'}" title="${n?c.name:'???'}">${c.svg}
+      ${c.r!=='c'?`<span class="t">${R_INFO[c.r].label}</span>`:''}${n?`<span class="n">×${n}</span>`:''}${justNew===c.id?'<span class="new">NEW</span>':''}</div>`;
+  }).join('');
+  const got=chars.filter(c=>dex[c.id]).length;
+  document.getElementById('dexCount').textContent=`수집 ${got} / ${chars.length}`;
+  document.getElementById('tiers').innerHTML=['c','r','l'].map(k=>{
+    const t=pool[k].length,g=pool[k].filter(c=>dex[c.id]).length;
+    return `<span class="${g===t?'ok':''}">${R_INFO[k].label} ${g}/${t}${g===t?' ✓':''}</span>`;
+  }).join('');
+  document.getElementById('dex').classList.toggle('done',got===chars.length);
+  return got;
+}
+renderDex();
+const dexEl=document.getElementById('dex'),dexBody=document.getElementById('dexBody'),dexTg=document.getElementById('dexToggle');
+function fitDex(){dexBody.style.maxHeight=dexBody.scrollHeight+'px';}
+function setDex(open){dexEl.classList.toggle('collapsed',!open);dexTg.setAttribute('aria-expanded',open);if(open){fitDex();document.getElementById('dexDot').classList.remove('on');}try{localStorage.setItem('gohome-dex-fold',open?'1':'0')}catch(e){}}
+let dexOpen=false;try{dexOpen=localStorage.getItem('gohome-dex-fold')==='1'}catch(e){}
+setDex(dexOpen);
+dexTg.addEventListener('click',()=>setDex(dexEl.classList.contains('collapsed')));
+window.addEventListener('resize',()=>{if(!dexEl.classList.contains('collapsed'))fitDex();});
+
+/* ===== 게임 ===== */
+const $=id=>document.getElementById(id);
+const cr=$('cr'),card=$('card'),btn=$('btn'),bar=$('bar');
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+cr.innerHTML=waiting;
+const DURATION=4000;
+let holding=false,start=0,pct=0,raf=0,last=null;
+
+function setPct(p){pct=p;bar.style.width=p+'%';$('pct').textContent=Math.floor(p);}
+function loop(t){
+  if(!holding) return;
+  const p=Math.min(100,(t-start)/DURATION*100);
+  setPct(p);cr.style.setProperty('--sp',(0.35-p*0.0028)+'s');
+  if(p>=100){release();return;}
+  raf=requestAnimationFrame(loop);
+}
+function press(e){
+  e.preventDefault(); if(holding) return;
+  holding=true;bar.style.transition='';btn.classList.add('down');$('btnTxt').textContent='으아아아…';
+  card.className='card';$('rar').className='rar';$('cname').textContent='';
+  $('say').textContent='두근두근…';$('comment').textContent='얼마나 가고 싶은 거예요…?';
+  cr.className='creature shake';cr.innerHTML=waiting;
+  start=performance.now();setPct(0);raf=requestAnimationFrame(loop);
+}
+function roll(){
+  const x=Math.random();
+  return pick(pool[x<0.05?'l':x<0.30?'r':'c']);
+}
+function release(){
+  if(!holding) return;
+  holding=false;cancelAnimationFrame(raf);btn.classList.remove('down');
+  const p=Math.floor(pct);
+  if(p<1){cr.className='creature idle';$('btnTxt').textContent='꾹 누르고 있다가 떼세요';$('say').textContent='너무 살짝 눌렀어요!';$('pct').textContent='--';bar.style.width=0;return;}
+  const c=roll(), isNew=!dex[c.id];
+  dex[c.id]=(dex[c.id]||0)+1;saveDex();justNew=isNew?c.id:null;
+  last={c,p};
+  cr.className='creature pop';cr.innerHTML=c.svg;
+  setTimeout(()=>{if(!holding) cr.className='creature idle';},620);
+  card.className='card'+(c.r==='r'?' rare':c.r==='l'?' legend':'');
+  $('rar').className='rar '+c.r;$('rar').textContent=(c.r==='l'?'✨ ':'')+R_INFO[c.r].label+(isNew?' · NEW!':'');
+  $('cname').textContent=c.name;$('say').textContent=c.say;
+  $('comment').textContent=comments.find(x=>p<=x[0])[1];
+  $('btnTxt').textContent='한 번 더 눌러볼까요?';
+  $('save').disabled=false;
+  bar.style.transition='width .6s ease';bar.style.width=0;setTimeout(()=>bar.style.transition='',650);
+  const before=chars.filter(x=>dex[x.id]).length-(isNew?1:0);
+  const got=renderDex();
+  if(dexEl.classList.contains('collapsed')){if(isNew)document.getElementById('dexDot').classList.add('on');}else fitDex();
+  if(c.r==='l'){flash();toast('✨ 전설 등장! ✨','l');burst(40,['⭐','✨','👑','💛','🌈']);}
+  else if(c.r==='r'){toast('희귀 등장!','r');burst(22,['💜','✨','💙','⭐']);}
+  else burst(p>=100?24:8,p>=100?['🏠','💗','✨','🎉']:['💗','✨','🌸','🫧']);
+  if(got===chars.length&&before<chars.length) setTimeout(()=>{toast('🎉 도감 완성! 🎉','d');burst(50,['🎉','🏆','💗','⭐','✨']);},1400);
+}
+function flash(){const f=document.createElement('div');f.className='flash';document.body.appendChild(f);setTimeout(()=>f.remove(),950);}
+function toast(t,k){const e=document.createElement('div');e.className='toast '+k;e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),1650);}
+function burst(n,items){
+  const r=cr.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  for(let k=0;k<n;k++){
+    const s=document.createElement('span');s.className='bit';s.textContent=pick(items);
+    const a=Math.random()*Math.PI*2,d=100+Math.random()*180;
+    s.style.left=x+'px';s.style.top=y+'px';
+    s.style.setProperty('--dx',Math.cos(a)*d+'px');s.style.setProperty('--dy',Math.sin(a)*d+'px');
+    s.style.setProperty('--r',(Math.random()*120-60)+'deg');
+    document.body.appendChild(s);setTimeout(()=>s.remove(),1750);
+  }
+}
+btn.addEventListener('pointerdown',press);
+window.addEventListener('pointerup',release);
+window.addEventListener('pointercancel',release);
+btn.addEventListener('contextmenu',e=>e.preventDefault());
+btn.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!e.repeat) press(e);});
+btn.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter') release();});
+
+/* ===== 이미지 저장 (카드 이미지 생성 → 길게 눌러 저장) ===== */
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+$('save').addEventListener('click',async()=>{
+  if(!last) return;
+  try{
+    await document.fonts.load('60px Jua');
+    const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    const ctx=cv.getContext('2d');
+    const {c,p}=last;
+    ctx.fillStyle=c.r==='l'?'#FFF6D6':c.r==='r'?'#EEF0FF':'#FFF0F3';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff';rr(ctx,60,60,W-120,H-120,60);ctx.fill();
+    ctx.textAlign='center';ctx.fillStyle='#4A2018';
+    ctx.font='64px Jua';ctx.fillText('집 가고 싶은 만큼 누르세요!',W/2,180);
+    const img=new Image();
+    await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(c.svg);});
+    ctx.drawImage(img,W/2-280,220,560,560);
+    const badge=R_INFO[c.r].label;ctx.font='40px Jua';
+    ctx.fillStyle=c.r==='l'?'#FFB938':c.r==='r'?'#8C9CFF':'#8FC79A';rr(ctx,W/2-80,800,160,64,32);ctx.fill();
+    ctx.fillStyle='#fff';ctx.fillText(badge,W/2,846);
+    ctx.fillStyle='#4A2F27';ctx.font='60px Jua';ctx.fillText(c.name,W/2,940);
+    ctx.font='44px Jua';ctx.fillStyle='#8B6F64';ctx.fillText('오늘의 퇴근 욕구',W/2,1020);
+    ctx.font='150px Jua';ctx.fillStyle='#4A2018';ctx.fillText(p+'%',W/2,1170);
+    ctx.font='40px Jua';ctx.fillStyle='#B79586';ctx.fillText(comments.find(x=>p<=x[0])[1],W/2,1240);
+    $('shot').src=cv.toDataURL('image/png');$('modal').classList.add('on');
+  }catch(e){ $('comment').textContent='이 화면에선 이미지를 만들 수 없어요. 캡처해 주세요!'; }
+});
+$('close').addEventListener('click',()=>$('modal').classList.remove('on'));
+$('modal').addEventListener('click',e=>{if(e.target.id==='modal')$('modal').classList.remove('on');});
+</script>
+</body>
+</html>
